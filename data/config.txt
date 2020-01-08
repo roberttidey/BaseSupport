@@ -1,0 +1,6 @@
+#Config file
+# lines are 
+#parameter1;parameter2
+1
+2
+

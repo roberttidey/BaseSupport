@@ -16,5 +16,8 @@
 - edit BaseConfig file
 	- name / passwords for WifiManager and OTA
 	- defines for customisation of setup
-- add #include "BaseConfig.h" to top of ino file  
+- add #include "BaseConfig.h" to top of ino file
+- after compiling and first serial upload use ip/upload to upload files from data folder
+- ip/edit can then be used to access the filing system
+- use ip/firmware to do OTA updates of new binaries
 
