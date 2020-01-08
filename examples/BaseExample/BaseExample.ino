@@ -27,8 +27,6 @@ void loadConfig() {
 			if(line.length() > 0 && line.charAt(0) != '#') {
 				switch(config) {
 					case 0: parameter1 = line.toInt(); break;
-					case 2: maxMotorTime = line.toInt(); break;
-					case 3: motorSwap = line.toInt(); break;
 					case 1: parameter2 = line.toInt();
 						Serial.println(F("Config loaded from file OK"));
 						break;
