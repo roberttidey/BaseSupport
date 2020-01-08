@@ -7,6 +7,7 @@
 - OTA webserver
 - SPIFFS
 - WebServer
+- Web FS access / editing
 - delay routines
 
 ### Usage
