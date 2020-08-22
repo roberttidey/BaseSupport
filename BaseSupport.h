@@ -5,7 +5,7 @@
  WifiManager
  WebServer
  UpdateServer
- Spiffs
+ Spiffs or LittleFS
  FileBrowsing
  */
 #define ESP8266
@@ -16,7 +16,18 @@
 #include <ESP8266HTTPUpdateServer.h>
 #include <DNSServer.h>
 #include <WiFiManager.h>
-#include "FS.h"
+
+#ifndef FILESYSTYPE
+#define FILESYSTYPE 0
+#endif
+
+#if FILESYSTYPE == 0
+	#include "LittleFS.h"
+	#define FILESYS LittleFS
+#else
+	#include "FS.h"
+	#define FILESYS SPIFFS
+#endif
 
 int setupWifi = 1;
 /*
@@ -104,6 +115,9 @@ int wifiConnect(int check) {
 #ifdef WM_STATIC_IP
 	wifiManager.setSTAStaticIPConfig(IPAddress(WM_STATIC_IP), IPAddress(WM_STATIC_GATEWAY), IPAddress(255,255,255,0));
 #endif
+#ifdef FASTCONNECT
+	wifiManager.setFastConnectMode(FASTCONNECT);
+#endif
 	wifiManager.setConfigPortalTimeout(180);
 	//Revert to STA if wifimanager times out as otherwise APA is left on.
 	strcpy(wmName, WM_NAME);
@@ -113,16 +127,16 @@ int wifiConnect(int check) {
 }
 
 void initFS() {
-	if(!SPIFFS.begin()) {
+	if(!FILESYS.begin()) {
 		Serial.println(F("No SIFFS found. Format it"));
-		if(SPIFFS.format()) {
-			SPIFFS.begin();
+		if(FILESYS.format()) {
+			FILESYS.begin();
 		} else {
 			Serial.println(F("No SIFFS found. Format it"));
 		}
 	} else {
-		Serial.println(F("SPIFFS file list"));
-		Dir dir = SPIFFS.openDir("/");
+		Serial.println(F("FILESYS file list"));
+		Dir dir = FILESYS.openDir("/");
 		while (dir.next()) {
 			Serial.print(dir.fileName());
 			Serial.print(F(" - "));
@@ -153,10 +167,10 @@ bool handleFileRead(String path){
   if(path.endsWith("/")) path += "index.htm";
   String contentType = getContentType(path);
   String pathWithGz = path + ".gz";
-  if(SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)){
-    if(SPIFFS.exists(pathWithGz))
+  if(FILESYS.exists(pathWithGz) || FILESYS.exists(path)){
+    if(FILESYS.exists(pathWithGz))
       path += ".gz";
-    File file = SPIFFS.open(path, "r");
+    File file = FILESYS.open(path, "r");
     size_t sent = server.streamFile(file, contentType);
     file.close();
     return true;
@@ -171,7 +185,7 @@ void handleFileUpload(){
     String filename = upload.filename;
     if(!filename.startsWith("/")) filename = "/"+filename;
     Serial.printf_P(PSTR("handleFileUpload Name: %s\r\n"), filename.c_str());
-    fsUploadFile = SPIFFS.open(filename, "w");
+    fsUploadFile = FILESYS.open(filename, "w");
     filename = String();
   } else if(upload.status == UPLOAD_FILE_WRITE){
     Serial.printf_P(PSTR("handleFileUpload Data: %d\r\n"), upload.currentSize);
@@ -190,9 +204,9 @@ void handleFileDelete(){
   Serial.printf_P(PSTR("handleFileDelete: %s\r\n"),path.c_str());
   if(path == "/")
     return server.send(500, "text/plain", "BAD PATH");
-  if(!SPIFFS.exists(path))
+  if(!FILESYS.exists(path))
     return server.send(404, "text/plain", "FileNotFound");
-  SPIFFS.remove(path);
+  FILESYS.remove(path);
   server.send(200, "text/plain", "");
   path = String();
 }
@@ -204,9 +218,9 @@ void handleFileCreate(){
   Serial.printf_P(PSTR("handleFileCreate: %s\r\n"),path.c_str());
   if(path == "/")
     return server.send(500, "text/plain", "BAD PATH");
-  if(SPIFFS.exists(path))
+  if(FILESYS.exists(path))
     return server.send(500, "text/plain", "FILE EXISTS");
-  File file = SPIFFS.open(path, "w");
+  File file = FILESYS.open(path, "w");
   if(file)
     file.close();
   else
@@ -220,7 +234,7 @@ void handleFileList() {
   
   String path = server.arg("dir");
   Serial.printf_P(PSTR("handleFileList: %s\r\n"),path.c_str());
-  Dir dir = SPIFFS.openDir(path);
+  Dir dir = FILESYS.openDir(path);
   path = String();
 
   String output = "[";
@@ -263,8 +277,8 @@ void handleMinimalUpload() {
   server.send ( 200, "text/html", temp );
 }
 
-void handleSpiffsFormat() {
-	SPIFFS.format();
+void handleFileSysFormat() {
+	FILESYS.format();
 	server.send(200, "text/json", "format complete");
 }
 
@@ -282,7 +296,7 @@ void setup() {
 #ifdef SETUP_START
 	setupStart();
 #endif
-#ifdef SETUP_SPIFFS
+#ifdef SETUP_FILESYS
 	Serial.println(F("Set up filing system"));
 	initFS();
 #endif
@@ -303,7 +317,7 @@ void setup() {
 		Serial.println(F("Set up web server"));
 		//Simple upload
 		server.on("/upload", handleMinimalUpload);
-		server.on("/format", handleSpiffsFormat);
+		server.on("/format", handleFileSysFormat);
 		server.on("/list", HTTP_GET, handleFileList);
 		//load editor
 		server.on("/edit", HTTP_GET, [](){
@@ -316,7 +330,7 @@ void setup() {
 		//second callback handles file uploads at that location
 		server.on("/edit", HTTP_POST, [](){ server.send(200, "text/plain", ""); }, handleFileUpload);
 		//called when the url is not defined here
-		//use it to load content from SPIFFS
+		//use it to load content from File System
 		server.onNotFound([](){if(!handleFileRead(server.uri())) server.send(404, "text/plain", "FileNotFound");});
 #ifdef SETUP_START
 		extraHandlers();

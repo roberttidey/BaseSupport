@@ -5,10 +5,16 @@
 - setup routine with hooks for customisation
 - WifiManager
 - OTA webserver
-- SPIFFS
+- SPIFFS or LittleFS
 - WebServer
 - Web FS access / editing
 - delay routines
+
+### Quick Connect support
+- Supports fast connect of WiFi (1 second instead of normal 3 seconds)
+- Use fork of WiFiManager at https://github.com/roberttidey/WiFiManager
+- Use development branch
+- Configure by having #define FASTCONNECT true in BaseConfig.h
 
 ### Usage
 - install into libraries folder
@@ -20,4 +26,8 @@
 - after compiling and first serial upload use ip/upload to upload files from data folder
 - ip/edit can then be used to access the filing system
 - use ip/firmware to do OTA updates of new binaries
+
+### Important
+Support for SPIFFS or LittleFS has been added. This affects the BaseConfig file.
+Use FILESYS. instead of SPIFFS. or LittleFS. in the app code
 

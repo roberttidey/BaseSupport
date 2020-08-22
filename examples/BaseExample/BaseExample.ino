@@ -19,7 +19,7 @@ void setupStart() {
 void loadConfig() {
 	String line = "";
 	int config = 0;
-	File f = SPIFFS.open(CONFIG_FILE, "r");
+	File f = FILESYS.open(CONFIG_FILE, "r");
 	if(f) {
 		while(f.available()) {
 			line =f.readStringUntil('\n');
