@@ -21,6 +21,10 @@
 #define FILESYSTYPE 0
 #endif
 
+#ifndef WM_PORTALTIMEOUT
+#define WM_PORTALTIMEOUT 180
+#endif
+
 #if FILESYSTYPE == 0
 	#include "LittleFS.h"
 	#define FILESYS LittleFS
@@ -50,7 +54,9 @@ const char* update_username = "admin";
 
 //AP definitions
 #define AP_MAX_WAIT 10
-#define AP_PORT 80
+#ifndef AP_PORT
+	#define AP_PORT 80
+#endif
 String macAddr;
 
 ESP8266WebServer server(AP_PORT);
@@ -118,7 +124,7 @@ int wifiConnect(int check) {
 #ifdef FASTCONNECT
 	wifiManager.setFastConnectMode(FASTCONNECT);
 #endif
-	wifiManager.setConfigPortalTimeout(180);
+	wifiManager.setConfigPortalTimeout(WM_PORTALTIMEOUT);
 	//Revert to STA if wifimanager times out as otherwise APA is left on.
 	strcpy(wmName, WM_NAME);
 	strcat(wmName, macAddr.c_str());
@@ -300,14 +306,15 @@ void setup() {
 	Serial.println(F("Set up filing system"));
 	initFS();
 #endif
+	macAddr = WiFi.macAddress();
+	macAddr.replace(":","");
+	Serial.println(macAddr);
+
 #ifdef CONFIG_FILE
 	loadConfig();
 #endif
 	if(setupWifi) {
 		Serial.println(F("Set up Wifi services"));
-		macAddr = WiFi.macAddress();
-		macAddr.replace(":","");
-		Serial.println(macAddr);
 		wifiConnect(0);
 		//Update service
 		MDNS.begin(host.c_str());
