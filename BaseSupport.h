@@ -71,7 +71,7 @@ String macAddr;
 ESP8266WebServer server(AP_PORT);
 ESP8266HTTPUpdateServer httpUpdater;
 
-void ICACHE_RAM_ATTR  delaymSec(unsigned long mSec) {
+void IRAM_ATTR  delaymSec(unsigned long mSec) {
 	unsigned long ms = mSec;
 	while(ms > 100) {
 		delay(100);
@@ -83,7 +83,7 @@ void ICACHE_RAM_ATTR  delaymSec(unsigned long mSec) {
 	yield();
 }
 
-void ICACHE_RAM_ATTR  delayuSec(unsigned long uSec) {
+void IRAM_ATTR  delayuSec(unsigned long uSec) {
 	unsigned long us = uSec;
 	while(us > 100000) {
 		delay(100);
@@ -139,6 +139,7 @@ int wifiConnect(int check) {
 	strcat(wmName, macAddr.c_str());
 	wifiManager.autoConnect(wmName, WM_PASSWORD);
 	WiFi.mode(WIFI_STA);
+	return 1;
 }
 
 #if SETUP_FILESYS == 1
